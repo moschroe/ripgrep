@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::{
     cell::RefCell,
     cmp,
@@ -5,7 +6,6 @@ use std::{
     io::{self, Read},
     path::Path,
 };
-
 use {
     encoding_rs_io::DecodeReaderBytesBuilder,
     grep_matcher::{LineTerminator, Match, Matcher},
@@ -180,6 +180,7 @@ pub struct Config {
     /// Whether to stop searching when a non-matching line is found after a
     /// matching line.
     stop_on_nonmatch: bool,
+    head_bytes: Option<u64>,
 }
 
 impl Default for Config {
@@ -198,6 +199,7 @@ impl Default for Config {
             encoding: None,
             bom_sniffing: true,
             stop_on_nonmatch: false,
+            head_bytes: None,
         }
     }
 }
@@ -494,6 +496,19 @@ impl SearcherBuilder {
         strategy: MmapChoice,
     ) -> &mut SearcherBuilder {
         self.config.mmap = strategy;
+        self
+    }
+
+    /// Set the maximum number of bytes of any file or input stream that will be examined.
+    ///
+    /// This will cap the amount of data read to this number, but underlying OS mechanisms may
+    /// still read more data from the source (like reading whole pages for mmap or read-ahead for
+    /// filesystems/disks).
+    pub fn head_bytes(
+        &mut self,
+        head_bytes: Option<u64>,
+    ) -> &mut SearcherBuilder {
+        self.config.head_bytes = head_bytes;
         self
     }
 

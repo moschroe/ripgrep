@@ -68,6 +68,7 @@ pub(crate) struct HiArgs {
     max_count: Option<u64>,
     max_depth: Option<usize>,
     max_filesize: Option<u64>,
+    head_bytes: Option<u64>,
     mmap_choice: grep::searcher::MmapChoice,
     mode: Mode,
     multiline: bool,
@@ -284,6 +285,7 @@ impl HiArgs {
             max_count: low.max_count,
             max_depth: low.max_depth,
             max_filesize: low.max_filesize,
+            head_bytes: low.head_bytes,
             mmap_choice,
             multiline: low.multiline,
             multiline_dotall: low.multiline_dotall,
@@ -714,7 +716,8 @@ impl HiArgs {
             .line_number(self.line_number)
             .multi_line(self.multiline)
             .memory_map(self.mmap_choice.clone())
-            .stop_on_nonmatch(self.stop_on_nonmatch);
+            .stop_on_nonmatch(self.stop_on_nonmatch)
+            .head_bytes(self.head_bytes);
         match self.context {
             ContextMode::Passthru => {
                 builder.passthru(true);
