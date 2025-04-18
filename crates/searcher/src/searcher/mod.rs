@@ -683,7 +683,20 @@ impl Searcher {
     {
         if let Some(mmap) = self.config.mmap.open(file, path) {
             log::trace!("{:?}: searching via memory map", path);
-            return self.search_slice(matcher, &mmap, write_to);
+            let slice: &[u8];
+            if let Some(head) = self.config.head_bytes {
+                let head = head.try_into().map_err(S::Error::error_message)?;
+                let max = min(head, mmap.len());
+                log::trace!(
+                    "only analyzing the first {} bytes (maximum: {})",
+                    max,
+                    head
+                );
+                slice = &mmap[0..max];
+            } else {
+                slice = &mmap;
+            }
+            return self.search_slice(matcher, slice, write_to);
         }
         // Fast path for multi-line searches of files when memory maps are not
         // enabled. This pre-allocates a buffer roughly the size of the file,
@@ -731,6 +744,17 @@ impl Searcher {
         S: Sink,
     {
         self.check_config(&matcher).map_err(S::Error::error_config)?;
+
+        let max: u64 = self
+            .config
+            .head_bytes
+            .map(|max| {
+                log::debug!("only analyzing the first {} bytes", max);
+                max
+            })
+            .unwrap_or(u64::MAX);
+
+        let read_from = read_from.take(max);
 
         let mut decode_buffer = self.decode_buffer.borrow_mut();
         let decoder = self
@@ -925,9 +949,19 @@ impl Searcher {
         assert!(self.config.multi_line);
 
         let mut decode_buffer = self.decode_buffer.borrow_mut();
+
+        let max: u64 = self
+            .config
+            .head_bytes
+            .map(|max| {
+                log::debug!("only analyzing the first {} bytes", max);
+                max
+            })
+            .unwrap_or(u64::MAX);
+
         let mut read_from = self
             .decode_builder
-            .build_with_buffer(file, &mut *decode_buffer)
+            .build_with_buffer(file.take(max), &mut *decode_buffer)
             .map_err(S::Error::error_io)?;
 
         // If we don't have a heap limit, then we can defer to std's
