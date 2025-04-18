@@ -20,3 +20,5 @@ mod misc;
 mod multiline;
 // Regression tests.
 mod regression;
+
+mod head_bytes;
