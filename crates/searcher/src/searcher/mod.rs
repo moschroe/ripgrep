@@ -749,7 +749,7 @@ impl Searcher {
             .config
             .head_bytes
             .map(|max| {
-                log::debug!("only analyzing the first {} bytes", max);
+                log::trace!("only analyzing the first {} bytes", max);
                 max
             })
             .unwrap_or(u64::MAX);
@@ -954,7 +954,7 @@ impl Searcher {
             .config
             .head_bytes
             .map(|max| {
-                log::debug!("only analyzing the first {} bytes", max);
+                log::trace!("only analyzing the first {} bytes", max);
                 max
             })
             .unwrap_or(u64::MAX);
